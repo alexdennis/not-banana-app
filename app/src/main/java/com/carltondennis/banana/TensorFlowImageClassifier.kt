@@ -84,8 +84,9 @@ class TensorFlowImageClassifier : Classifier {
                 ))
             }
         }
-        val recognitions: ArrayList<Classifier.Recognition> = arrayListOf();
-        for (i in 0..recognitions.size) {
+        val recognitions: ArrayList<Classifier.Recognition> = arrayListOf()
+        val recognitionsSize = Math.min(pq.size, MAX_RESULTS)
+        for (i in 1..recognitionsSize) {
             recognitions.add(pq.poll())
         }
         Trace.endSection()
@@ -93,15 +94,15 @@ class TensorFlowImageClassifier : Classifier {
     }
 
     override fun enableStatLogging(debug: Boolean) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        logStats = debug
     }
 
     override fun getStatString(): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return inferenceInterface.statString
     }
 
     override fun close() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        inferenceInterface.close()
     }
 
     companion object {
