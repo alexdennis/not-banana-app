@@ -8,19 +8,10 @@ import android.graphics.RectF
  */
 interface Classifier {
 
-    class Recognition(val id:String?, val title:String?, val confidence:Float?, var location:RectF?) {
+    class Recognition(val id:String, val title:String, val confidence:Float, var location:RectF?) {
 
         override fun toString(): String {
-            var resultString = ""
-            if (id != null) {
-                resultString += "[$id]"
-            }
-            if (title != null) {
-                resultString += "[$title]"
-            }
-            if (confidence != null) {
-                resultString += "[$confidence]"
-            }
+            var resultString = "[$id][$title][$confidence]"
             if (location != null) {
                 resultString += "[$location]"
             }

@@ -1,7 +1,9 @@
 package com.carltondennis.banana
 
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,5 +24,9 @@ class MainActivity : AppCompatActivity() {
 
         classifier = TensorFlowImageClassifier.create(assets, MODEL_FILE, LABEL_FILE, INPUT_SIZE,
                 IMAGE_MEAN, IMAGE_STD, INPUT_NAME, OUTPUT_NAME)
+
+        val recognitions = classifier.recognizeImage(BitmapFactory.decodeResource(resources, R.raw.test_banana))
+
+        recognitions.map { Timber.d(it.toString()) }
     }
 }

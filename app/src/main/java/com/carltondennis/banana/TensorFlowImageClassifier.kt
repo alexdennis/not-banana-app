@@ -2,6 +2,7 @@ package com.carltondennis.banana
 
 import android.content.res.AssetManager
 import android.graphics.Bitmap
+import android.os.Trace
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface
 import timber.log.Timber
 import java.io.BufferedReader
@@ -27,17 +28,68 @@ class TensorFlowImageClassifier : Classifier {
 
     // Pre-allocated buffers.
     private val labels = Vector<String>()
-    private var intValues: IntArray? = null
-    private var floatValues: FloatArray? = null
-    private var outputs: FloatArray? = null
-    private var outputNames: Array<String>? = null
+    lateinit private var intValues: IntArray
+    lateinit private var floatValues: FloatArray
+    lateinit private var outputs: FloatArray
+    lateinit private var outputNames: Array<String>
 
     private var logStats = false
 
     lateinit private var inferenceInterface: TensorFlowInferenceInterface
 
     override fun recognizeImage(bitmap: Bitmap): List<Classifier.Recognition> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // Log this method so that it can be analyzed with systrace.
+        Trace.beginSection("recognizeImage")
+
+        Trace.beginSection("preprocessBitmap")
+        // Preprocess the image data from 0-255 int to normalized float based
+        // on the provided parameters.
+        bitmap.getPixels(intValues, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        if (intValues != null) {
+            for (i in intValues.indices) {
+                val value = intValues[i]
+                floatValues[i * 3 + 0] = ((value shr 16 and 0xFF) - imageMean) / imageStd
+                floatValues[i * 3 + 1] = ((value shr 8 and 0xFF) - imageMean) / imageStd
+                floatValues[i * 3 + 2] = ((value and 0xFF) - imageMean) / imageStd
+            }
+        }
+        Trace.endSection()
+
+        // Copy the input data into TensorFlow.
+        Trace.beginSection("feed")
+        inferenceInterface.feed(inputName, floatValues, 1L, inputSize.toLong(), inputSize.toLong(), 3L)
+        Trace.endSection()
+
+        // Run the inference call.
+        Trace.beginSection("run")
+        inferenceInterface.run(outputNames, logStats)
+        Trace.endSection()
+
+        // Copy the output Tensor back into the output array.
+        Trace.beginSection("fetch")
+        inferenceInterface.fetch(outputName, outputs)
+        Trace.endSection()
+
+        var pq: PriorityQueue<Classifier.Recognition> = PriorityQueue(
+                3,
+                { lhs, rhs -> if (rhs.confidence > lhs.confidence) 1 else if  (rhs.confidence < lhs.confidence) -1  else 0 }
+        )
+        for (i in outputs.indices) {
+            if (outputs[i] > THRESHOLD) {
+                pq.add(Classifier.Recognition(
+                        i.toString(),
+                        if (labels.size > i) labels.get(i) else "unknown",
+                        outputs[i],
+                        null
+                ))
+            }
+        }
+        val recognitions: ArrayList<Classifier.Recognition> = arrayListOf();
+        for (i in 0..recognitions.size) {
+            recognitions.add(pq.poll())
+        }
+        Trace.endSection()
+        return recognitions
     }
 
     override fun enableStatLogging(debug: Boolean) {
@@ -102,6 +154,19 @@ class TensorFlowImageClassifier : Classifier {
             val operation = c.inferenceInterface.graphOperation(outputName)
             var numClasses = operation.output(0).shape().size(1).toInt()
             Timber.i("Read " + c.labels.size + " labels, output layer size is " + numClasses)
+
+            // Ideally, inputSize could have been retrieved from the shape of the input operation. Alas,
+            // the placeholder node for input in the graphdef typically used does not specify a shape, so it
+            // must be passed in as a parameter.
+            c.inputSize = inputSize
+            c.imageMean = imageMean
+            c.imageStd = imageStd
+
+            // Pre-allocate buffers.
+            c.outputNames = arrayOf(outputName)
+            c.intValues = IntArray(inputSize * inputSize)
+            c.floatValues = FloatArray(inputSize * inputSize * 3)
+            c.outputs = FloatArray(numClasses)
 
             return c
         }
