@@ -1,3 +1,5 @@
-<resources>
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
     <string name="app_name">Not Banana</string>
+    <string name="loading_text">Inferencing...</string>
+    <string name="guess"><xliff:g id="confidence">%1$1.2f</xliff:g>%% <xliff:g id="label">%2$s</xliff:g></string>
 </resources>

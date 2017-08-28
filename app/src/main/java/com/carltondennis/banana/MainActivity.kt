@@ -10,6 +10,10 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -30,6 +34,7 @@ class MainActivity : AppCompatActivity() {
     private val LABEL_FILE = "file:///android_asset/retrained_labels.txt"
 
     private lateinit var classifier: Classifier
+    private var disposible: Disposable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +53,13 @@ class MainActivity : AppCompatActivity() {
         fab.setOnClickListener {
             showCamera()
         }
+    }
+
+    override fun onStop() {
+        // RxJava stuff
+        disposible?.dispose()
+
+        super.onStop()
     }
 
     private fun showCamera() {
@@ -93,28 +105,46 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == IMAGE_CAPTURE_REQUEST && resultCode == Activity.RESULT_OK) {
             val extras = data.extras
             val imageBitmap = extras.get("data") as Bitmap
+
+            // Display image to the user
             output_image.setImageBitmap(imageBitmap)
+
+            // Do inferencing
             inference(imageBitmap)
         }
     }
 
-    private fun inference(bm: Bitmap) {
-        // Crop it for inferencing
-        var croppedBitmap = Bitmap.createBitmap(INPUT_SIZE, INPUT_SIZE, Bitmap.Config.ARGB_8888)
-        val screenOrientation = windowManager.defaultDisplay.rotation
-        cropAndRescaleBitmap(bm, croppedBitmap, screenOrientation)
+    private fun inferencing() {
+        output_label.text = getString(R.string.loading_text)
+    }
 
-        // Get classification
-        val recognitions = classifier.recognizeImage(croppedBitmap)
-
+    private fun display(recognitions: List<Classifier.Recognition>) {
         // Print classifications
-        var out = StringBuilder();
-        recognitions.map {
-            out.append(it.title)
-            out.append(" - ")
-            out.append(it.confidence)
-            out.append("\n")
+        var out = StringBuilder().apply {
+            recognitions.map {
+                append(getString(R.string.guess, (it.confidence * 100), it.title))
+            }
         }
         output_label.text = out.toString()
+    }
+
+    private fun inference(bm: Bitmap) {
+
+        // Crop bitmap to fit input tensor
+        val screenOrientation = windowManager.defaultDisplay.rotation
+        var croppedBitmap = Bitmap.createBitmap(INPUT_SIZE, INPUT_SIZE, Bitmap.Config.ARGB_8888)
+        cropAndRescaleBitmap(bm, croppedBitmap, screenOrientation)
+
+        // Show message in UI to assure the use that things are happening
+        inferencing()
+
+        disposible = Single.just(croppedBitmap)
+                // run the classifier on the image in the background
+                .map { x -> classifier.recognizeImage(x) }
+                .subscribeOn(Schedulers.computation())
+                // Display classifications on the UI thread
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe { x -> display(x) }
+
     }
 }
