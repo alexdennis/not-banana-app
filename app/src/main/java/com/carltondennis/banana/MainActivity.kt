@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var classifier: Classifier
     private var disposible: Disposable? = null
-    private lateinit var text_to_speech: TextToSpeech
+    private lateinit var textToSpeech: TextToSpeech
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,8 +47,8 @@ class MainActivity : AppCompatActivity() {
         classifier = TensorFlowImageClassifier.create(assets, MODEL_FILE, LABEL_FILE, INPUT_SIZE,
                 IMAGE_MEAN, IMAGE_STD, INPUT_NAME, OUTPUT_NAME)
 
-        text_to_speech = TextToSpeech(applicationContext, {
-            status -> if (status != TextToSpeech.ERROR) text_to_speech.language = Locale.UK
+        textToSpeech = TextToSpeech(applicationContext, {
+            status -> if (status != TextToSpeech.ERROR) textToSpeech.language = Locale.UK
         })
 
         if (hasPermission()) {
@@ -62,11 +62,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onStop() {
+    override fun onDestroy() {
         // RxJava stuff
         disposible?.dispose()
 
-        super.onStop()
+        classifier.close()
+        textToSpeech.shutdown()
+
+        super.onDestroy()
     }
 
     private fun showCamera() {
@@ -133,8 +136,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        output_label.text = out.toString()
-        text_to_speech.speak(out.toString(), TextToSpeech.QUEUE_FLUSH, null, "results")
+        var speech = out.toString()
+        output_label.text = speech
+        textToSpeech.speak(speech, TextToSpeech.QUEUE_FLUSH, null, "results")
     }
 
     private fun inference(bm: Bitmap) {
