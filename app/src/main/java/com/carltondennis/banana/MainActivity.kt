@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity() {
     private fun requestPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(PERMISSION_STORAGE)) {
-                Toast.makeText(this@MainActivity, "Camera AND storage permission are required for this demo", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, getString(R.string.permision_rationale), Toast.LENGTH_LONG).show()
             }
             requestPermissions(arrayOf(PERMISSION_CAMERA, PERMISSION_STORAGE), PERMISSIONS_REQUEST)
         }

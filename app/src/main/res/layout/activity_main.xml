@@ -10,14 +10,14 @@
 
     <ImageView
         android:id="@+id/output_image"
-        android:layout_marginRight="0dp"
+        android:layout_marginRight="16dp"
         app:layout_constraintRight_toRightOf="parent"
-        android:layout_marginLeft="0dp"
+        android:layout_marginLeft="16dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginBottom="0dp"
+        android:layout_marginBottom="16dp"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="0dp"
+        android:layout_marginTop="16dp"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintHorizontal_bias="0.0"
@@ -28,15 +28,16 @@
         android:layout_width="0dp"
         android:layout_height="96dp"
         style="@style/Base.TextAppearance.AppCompat.Headline"
-        android:background="@color/primary"
         android:textAlignment="center"
         tools:text="not banana - 0.999"
         android:textColor="@color/icons"
-        app:layout_constraintTop_toTopOf="parent"
         android:layout_marginRight="0dp"
         app:layout_constraintRight_toRightOf="parent"
         android:layout_marginLeft="0dp"
-        app:layout_constraintLeft_toLeftOf="parent"/>
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/fab"/>
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
