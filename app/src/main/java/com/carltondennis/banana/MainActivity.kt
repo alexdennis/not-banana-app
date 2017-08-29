@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.speech.tts.TextToSpeech
 import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
 import io.reactivex.Single
@@ -15,6 +16,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,6 +37,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var classifier: Classifier
     private var disposible: Disposable? = null
+    private lateinit var text_to_speech: TextToSpeech
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +46,10 @@ class MainActivity : AppCompatActivity() {
         // Create classifier
         classifier = TensorFlowImageClassifier.create(assets, MODEL_FILE, LABEL_FILE, INPUT_SIZE,
                 IMAGE_MEAN, IMAGE_STD, INPUT_NAME, OUTPUT_NAME)
+
+        text_to_speech = TextToSpeech(applicationContext, {
+            status -> if (status != TextToSpeech.ERROR) text_to_speech.language = Locale.UK
+        })
 
         if (hasPermission()) {
             showCamera()
@@ -125,7 +132,9 @@ class MainActivity : AppCompatActivity() {
                 append(getString(R.string.guess, (it.confidence * 100), it.title))
             }
         }
+
         output_label.text = out.toString()
+        text_to_speech.speak(out.toString(), TextToSpeech.QUEUE_FLUSH, null, "results")
     }
 
     private fun inference(bm: Bitmap) {

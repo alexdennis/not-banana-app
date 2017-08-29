@@ -1,6 +1,6 @@
 <resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
     <string name="app_name">Not Banana</string>
-    <string name="loading_text">Inferencing...</string>
-    <string name="guess"><xliff:g id="confidence">%1$1.2f</xliff:g>%% <xliff:g id="label">%2$s</xliff:g></string>
+    <string name="loading_text">Detecting...</string>
+    <string name="guess"><xliff:g id="confidence">%1$1.2f</xliff:g>%% sure it\'s <xliff:g id="label">%2$s</xliff:g>\n</string>
     <string name="permision_rationale">Camera AND storage permission are required for this demo</string>
 </resources>
