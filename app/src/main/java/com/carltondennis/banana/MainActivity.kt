@@ -117,7 +117,7 @@ class MainActivity : AppCompatActivity() {
             val imageBitmap = extras.get("data") as Bitmap
 
             // Display image to the user
-            output_image.setImageBitmap(imageBitmap)
+            // output_image.setImageBitmap(imageBitmap)
 
             // Do inferencing
             inference(imageBitmap)
@@ -125,20 +125,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun inferencing() {
-        output_label.text = getString(R.string.loading_text)
+        outputLabel.text = getString(R.string.loading_text)
+        outputImage.setImageBitmap(null)
     }
 
     private fun display(recognitions: List<Classifier.Recognition>) {
-        // Print classifications
+        // Build string from results of the classifier
         var out = StringBuilder().apply {
             recognitions.map {
                 append(getString(R.string.guess, (it.confidence * 100), it.title))
             }
         }
+        outputLabel.text = out.toString()
 
-        var speech = out.toString()
-        output_label.text = speech
+        // Speak out the label
+        var speech = recognitions.first().title
         textToSpeech.speak(speech, TextToSpeech.QUEUE_FLUSH, null, "results")
+
+        // Show an appropriate image
+        when (recognitions.first().title) {
+            "banana" -> outputImage.setImageResource(R.raw.banana)
+            else -> outputImage.setImageResource(R.raw.not_banana)
+        }
     }
 
     private fun inference(bm: Bitmap) {
