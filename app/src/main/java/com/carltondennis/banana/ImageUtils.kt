@@ -10,6 +10,8 @@ import java.io.FileOutputStream
 
 /**
  * Created by alex on 8/26/17.
+ *
+ * Adapted from https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/android/src/org/tensorflow/demo/env/ImageUtils.java
  */
 fun cropAndRescaleBitmap(src: Bitmap, dst: Bitmap, screenOrientation: Int) {
     Timber.d("width: ${src.width}, height: ${src.height}")

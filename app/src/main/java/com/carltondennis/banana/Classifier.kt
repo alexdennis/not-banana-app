@@ -5,6 +5,8 @@ import android.graphics.RectF
 
 /**
  * Created by alex on 8/26/17.
+ *
+ * Adapted from https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/android/src/org/tensorflow/demo/Classifier.java
  */
 interface Classifier {
 
