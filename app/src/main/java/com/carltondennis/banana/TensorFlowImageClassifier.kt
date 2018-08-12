@@ -30,14 +30,14 @@ class TensorFlowImageClassifier : Classifier {
 
     // Pre-allocated buffers.
     private val labels = Vector<String>()
-    lateinit private var intValues: IntArray
-    lateinit private var floatValues: FloatArray
-    lateinit private var outputs: FloatArray
-    lateinit private var outputNames: Array<String>
+    private lateinit var intValues: IntArray
+    private lateinit var floatValues: FloatArray
+    private lateinit var outputs: FloatArray
+    private lateinit var outputNames: Array<String>
 
     private var logStats = false
 
-    lateinit private var inferenceInterface: TensorFlowInferenceInterface
+    private lateinit var inferenceInterface: TensorFlowInferenceInterface
 
     override fun recognizeImage(bitmap: Bitmap): List<Classifier.Recognition> {
         // Log this method so that it can be analyzed with systrace.
@@ -47,13 +47,11 @@ class TensorFlowImageClassifier : Classifier {
         // Preprocess the image data from 0-255 int to normalized float based
         // on the provided parameters.
         bitmap.getPixels(intValues, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-        if (intValues != null) {
-            for (i in intValues.indices) {
-                val value = intValues[i]
-                floatValues[i * 3 + 0] = ((value shr 16 and 0xFF) - imageMean) / imageStd
-                floatValues[i * 3 + 1] = ((value shr 8 and 0xFF) - imageMean) / imageStd
-                floatValues[i * 3 + 2] = ((value and 0xFF) - imageMean) / imageStd
-            }
+        for (i in intValues.indices) {
+            val value = intValues[i]
+            floatValues[i * 3 + 0] = ((value shr 16 and 0xFF) - imageMean) / imageStd
+            floatValues[i * 3 + 1] = ((value shr 8 and 0xFF) - imageMean) / imageStd
+            floatValues[i * 3 + 2] = ((value and 0xFF) - imageMean) / imageStd
         }
         Trace.endSection()
 
@@ -72,10 +70,9 @@ class TensorFlowImageClassifier : Classifier {
         inferenceInterface.fetch(outputName, outputs)
         Trace.endSection()
 
-        var pq: PriorityQueue<Classifier.Recognition> = PriorityQueue(
-                3,
-                { lhs, rhs -> if (rhs.confidence > lhs.confidence) 1 else if  (rhs.confidence < lhs.confidence) -1  else 0 }
-        )
+        val pq: PriorityQueue<Classifier.Recognition> = PriorityQueue(3)
+            { lhs, rhs -> if (rhs.confidence > lhs.confidence) 1 else if (rhs.confidence < lhs.confidence) -1 else 0 }
+
         for (i in outputs.indices) {
             if (outputs[i] > THRESHOLD) {
                 pq.add(Classifier.Recognition(
@@ -111,9 +108,9 @@ class TensorFlowImageClassifier : Classifier {
         /**
          * Initializes a native TensorFlow session for classifying images.
          *
-         * @param resources The resources object to load tiems
-         * @param modelResourceId The resource id for the model file
-         * @param labelsResourceId The resource id for the label file
+         * @param assetManager The Asset Manager for loading assets.
+         * @param modelFilename The name of the model file
+         * @param labelsFilename The name of the label file
          * @param inputSize The input size. A square image of inputSize x inputSize is assumed.
          * @param imageMean The assumed mean of the image values.
          * @param imageStd The assumed std of the image values.
@@ -135,14 +132,13 @@ class TensorFlowImageClassifier : Classifier {
             c.outputName = outputName
 
             // Read the label names into memory.
-            var actualFilename = labelsFilename.split("file:///android_asset/")[1]
-            Timber.i("Reading labels from: " + actualFilename);
-            var br: BufferedReader?
+            val actualFilename = labelsFilename.split("file:///android_asset/")[1]
+            Timber.i("Reading labels from: %s", actualFilename)
             try {
-                br = BufferedReader(InputStreamReader(assetManager.open(actualFilename)))
+                val br = BufferedReader(InputStreamReader(assetManager.open(actualFilename)))
                 var line: String?
                 do {
-                    line = br?.readLine()
+                    line = br.readLine()
                     if (line != null) {
                         c.labels.add(line)
                     }
@@ -155,8 +151,8 @@ class TensorFlowImageClassifier : Classifier {
 
             // The shape of the output is [N, NUM_CLASSES], where N is the batch size.
             val operation = c.inferenceInterface.graphOperation(outputName)
-            var numClasses = operation.output(0).shape().size(1).toInt()
-            Timber.i("Read " + c.labels.size + " labels, output layer size is " + numClasses)
+            val numClasses = operation.output<Int>(0).shape().size(1).toInt()
+            Timber.i("Read %d labels, output layer size is %d", c.labels.size, numClasses)
 
             // Ideally, inputSize could have been retrieved from the shape of the input operation. Alas,
             // the placeholder node for input in the graphdef typically used does not specify a shape, so it

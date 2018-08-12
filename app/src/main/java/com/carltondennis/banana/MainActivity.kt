@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
@@ -47,9 +46,9 @@ class MainActivity : AppCompatActivity() {
         classifier = TensorFlowImageClassifier.create(assets, MODEL_FILE, LABEL_FILE, INPUT_SIZE,
                 IMAGE_MEAN, IMAGE_STD, INPUT_NAME, OUTPUT_NAME)
 
-        textToSpeech = TextToSpeech(applicationContext, {
-            status -> if (status != TextToSpeech.ERROR) textToSpeech.language = Locale.UK
-        })
+        textToSpeech = TextToSpeech(applicationContext) { status ->
+            if (status != TextToSpeech.ERROR) textToSpeech.language = Locale.UK
+        }
 
         if (hasPermission()) {
             showCamera()
@@ -80,21 +79,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(PERMISSION_STORAGE)) {
-                Toast.makeText(this@MainActivity, getString(R.string.permision_rationale), Toast.LENGTH_LONG).show()
-            }
-            requestPermissions(arrayOf(PERMISSION_CAMERA, PERMISSION_STORAGE), PERMISSIONS_REQUEST)
+        if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA) || shouldShowRequestPermissionRationale(PERMISSION_STORAGE)) {
+            Toast.makeText(this@MainActivity, getString(R.string.permision_rationale), Toast.LENGTH_LONG).show()
         }
+        requestPermissions(arrayOf(PERMISSION_CAMERA, PERMISSION_STORAGE), PERMISSIONS_REQUEST)
+
     }
 
-    private fun hasPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            checkSelfPermission(PERMISSION_CAMERA) == PackageManager.PERMISSION_GRANTED && checkSelfPermission(PERMISSION_STORAGE) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-    }
+    private fun hasPermission(): Boolean =
+            checkSelfPermission(PERMISSION_CAMERA) == PackageManager.PERMISSION_GRANTED
+                    && checkSelfPermission(PERMISSION_STORAGE) == PackageManager.PERMISSION_GRANTED
 
     override fun onRequestPermissionsResult(
             requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
@@ -131,7 +125,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun display(recognitions: List<Classifier.Recognition>) {
         // Build string from results of the classifier
-        var out = StringBuilder().apply {
+        val out = StringBuilder().apply {
             recognitions.map {
                 append(getString(R.string.guess, (it.confidence * 100), it.title))
             }
@@ -139,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         outputLabel.text = out.toString()
 
         // Speak out the label
-        var speech = recognitions.first().title
+        val speech = recognitions.first().title
         textToSpeech.speak(speech, TextToSpeech.QUEUE_FLUSH, null, "results")
 
         // Show an appropriate image
@@ -153,7 +147,7 @@ class MainActivity : AppCompatActivity() {
 
         // Crop bitmap to fit input tensor
         val screenOrientation = windowManager.defaultDisplay.rotation
-        var croppedBitmap = Bitmap.createBitmap(INPUT_SIZE, INPUT_SIZE, Bitmap.Config.ARGB_8888)
+        val croppedBitmap = Bitmap.createBitmap(INPUT_SIZE, INPUT_SIZE, Bitmap.Config.ARGB_8888)
         cropAndRescaleBitmap(bm, croppedBitmap, screenOrientation)
 
         // Show message in UI to assure the use that things are happening
